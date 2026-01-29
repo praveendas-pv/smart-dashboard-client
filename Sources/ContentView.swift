@@ -2,9 +2,11 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var items: [Item] = []
+    @State private var tasks: [TaskItem] = []
     @State private var isLoading = false
     @State private var apiStatus = "Checking..."
     @State private var errorMessage: String?
+    @State private var selectedTab = 0
 
     private let baseURL = "http://localhost:8000"
 
@@ -28,27 +30,49 @@ struct ContentView: View {
 
             // Content
             if let error = errorMessage {
-                VStack(spacing: 12) {
-                    Image(systemName: "exclamationmark.triangle")
-                        .font(.largeTitle)
-                        .foregroundStyle(.orange)
-                    Text(error)
-                        .foregroundStyle(.secondary)
-                    Text("Start API: cd services/api && uv run fastapi dev")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                errorView(error: error)
             } else if isLoading {
-                ProgressView("Loading items...")
+                ProgressView("Loading...")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ItemsTable(items: items)
+                TabView(selection: $selectedTab) {
+                    ItemsTable(items: items)
+                        .tabItem {
+                            Label("Items", systemImage: "shippingbox")
+                        }
+                        .tag(0)
+
+                    TasksTable(tasks: tasks)
+                        .tabItem {
+                            Label("Tasks", systemImage: "checklist")
+                        }
+                        .tag(1)
+                }
             }
         }
         .task {
             await loadData()
         }
+    }
+
+    private func errorView(error: String) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.largeTitle)
+                .foregroundStyle(.orange)
+            Text(error)
+                .foregroundStyle(.secondary)
+            Text("Start API: cd services/api && uv run fastapi dev")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+            Button("Retry") {
+                Task {
+                    await loadData()
+                }
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func loadData() async {
@@ -68,15 +92,45 @@ struct ContentView: View {
             return
         }
 
-        // Fetch items
+        // Fetch items and tasks in parallel
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await loadItems() }
+            group.addTask { await loadTasks() }
+        }
+
+        isLoading = false
+    }
+
+    private func loadItems() async {
         do {
             let url = URL(string: "\(baseURL)/items")!
             let (data, _) = try await URLSession.shared.data(from: url)
             items = try JSONDecoder().decode([Item].self, from: data)
         } catch {
-            errorMessage = "Failed to load items"
+            // Items loading failure is not critical
+            print("Failed to load items: \(error)")
         }
+    }
 
-        isLoading = false
+    private func loadTasks() async {
+        do {
+            let url = URL(string: "\(baseURL)/tasks")!
+
+            // Create a custom URLSession with 5-second timeout
+            let config = URLSessionConfiguration.default
+            config.timeoutIntervalForRequest = 5
+            let session = URLSession(configuration: config)
+
+            let (data, _) = try await session.data(from: url)
+
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            decoder.dateDecodingStrategy = .iso8601
+
+            tasks = try decoder.decode([TaskItem].self, from: data)
+        } catch {
+            // Tasks loading failure is not critical
+            print("Failed to load tasks: \(error)")
+        }
     }
 }
