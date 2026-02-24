@@ -31,8 +31,13 @@ struct ContentView: View {
     @AppStorage(AppStorageKeys.textColorHex) private var textColorHex = "#000000"
     @AppStorage(AppStorageKeys.textAlignment) private var textAlignment = TextAlignmentOption.leading.rawValue
     @AppStorage(AppStorageKeys.currencyCode) private var currencyCode = "USD"
+    @AppStorage(AppStorageKeys.bgColorHex) private var bgColorHex = "#FFFFFF"
+    @AppStorage(AppStorageKeys.applyBgToMain) private var applyBgToMain = true
+    @AppStorage(AppStorageKeys.applyBgToTable) private var applyBgToTable = true
+    @AppStorage(AppStorageKeys.applyBgToHeader) private var applyBgToHeader = false
     @AppStorage(AppStorageKeys.showFontPanel) private var showFontPanel = false
     @AppStorage(AppStorageKeys.showTitleEditor) private var showTitleEditor = false
+    @AppStorage(AppStorageKeys.showBgColorPanel) private var showBgColorPanel = false
 
     private let baseURL = "http://localhost:8000"
 
@@ -55,10 +60,10 @@ struct ContentView: View {
                     .fill(apiStatus == "healthy" ? .green : .red)
                     .frame(width: 12, height: 12)
                 Text(apiStatus)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(applyBgToHeader && !Color(hex: bgColorHex).isLight ? .white.opacity(0.7) : .secondary)
             }
             .padding()
-            .background(.bar)
+            .background(applyBgToHeader ? Color(hex: bgColorHex) : Color(nsColor: .windowBackgroundColor))
 
             Divider()
 
@@ -119,6 +124,7 @@ struct ContentView: View {
                 }
             }
         }
+        .background(applyBgToMain ? Color(hex: bgColorHex) : Color.clear)
         .task {
             await loadData()
         }
@@ -196,6 +202,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showTitleEditor) {
             TitleEditorView()
+        }
+        .sheet(isPresented: $showBgColorPanel) {
+            BackgroundColorView()
         }
     }
 

@@ -13,8 +13,22 @@ struct ItemsTable: View {
     @AppStorage(AppStorageKeys.fontSize) private var fontSize = 28.0
     @AppStorage(AppStorageKeys.isBold) private var isBold = true
     @AppStorage(AppStorageKeys.isItalic) private var isItalic = false
+    @AppStorage(AppStorageKeys.bgColorHex) private var bgColorHex = "#FFFFFF"
+    @AppStorage(AppStorageKeys.applyBgToTable) private var applyBgToTable = true
 
     private let headerColor = Color(nsColor: NSColor.controlAccentColor)
+
+    private var tableBgColor: Color {
+        applyBgToTable ? Color(hex: bgColorHex) : Color(nsColor: .controlBackgroundColor)
+    }
+
+    private var smartTextColor: Color {
+        applyBgToTable && !Color(hex: bgColorHex).isLight ? .white : .primary
+    }
+
+    private var smartSecondaryTextColor: Color {
+        applyBgToTable && !Color(hex: bgColorHex).isLight ? .white.opacity(0.7) : .secondary
+    }
 
     private var contentFont: Font {
         let family = FontFamily(rawValue: fontFamily) ?? .system
@@ -76,21 +90,24 @@ struct ItemsTable: View {
                                 HStack(spacing: 0) {
                                     Text("\(item.id)")
                                         .font(contentFont)
+                                        .foregroundStyle(smartTextColor)
                                         .monospacedDigit()
                                         .frame(width: 60)
                                         .multilineTextAlignment(.center)
 
                                     Text(item.name)
                                         .font(contentFont)
+                                        .foregroundStyle(smartTextColor)
                                         .frame(maxWidth: .infinity, alignment: .leading)
 
                                     Text(item.description)
                                         .font(contentFont)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(smartSecondaryTextColor)
                                         .frame(maxWidth: .infinity, alignment: .leading)
 
                                     Text(item.price, format: .currency(code: currencyCode))
                                         .font(contentFont)
+                                        .foregroundStyle(smartTextColor)
                                         .monospacedDigit()
                                         .frame(width: 100, alignment: .trailing)
 
@@ -159,8 +176,9 @@ struct ItemsTable: View {
 
     private func rowBackground(index: Int, itemId: Int) -> Color {
         if hoveredItemId == itemId {
-            return Color.accentColor.opacity(0.1)
+            return Color.accentColor.opacity(0.15)
         }
-        return index % 2 == 0 ? Color(nsColor: .controlBackgroundColor) : Color(nsColor: .controlBackgroundColor).opacity(0.6)
+        let baseColor = tableBgColor
+        return index % 2 == 0 ? baseColor : baseColor.opacity(0.85)
     }
 }

@@ -159,4 +159,12 @@ extension Color {
         let b = Int(components.blueComponent * 255)
         return String(format: "#%02X%02X%02X", r, g, b)
     }
+
+    var isLight: Bool {
+        guard let components = NSColor(self).usingColorSpace(.sRGB) else {
+            return true
+        }
+        let luminance = 0.299 * components.redComponent + 0.587 * components.greenComponent + 0.114 * components.blueComponent
+        return luminance > 0.5
+    }
 }

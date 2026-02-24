@@ -5,6 +5,7 @@ import AppKit
 struct SmartDashboardApp: App {
     @AppStorage(AppStorageKeys.showFontPanel) private var showFontPanel = false
     @AppStorage(AppStorageKeys.showTitleEditor) private var showTitleEditor = false
+    @AppStorage(AppStorageKeys.showBgColorPanel) private var showBgColorPanel = false
     @AppStorage(AppStorageKeys.currencyCode) private var currencyCode = "USD"
 
     init() {
@@ -14,6 +15,7 @@ struct SmartDashboardApp: App {
         // Reset transient sheet triggers
         UserDefaults.standard.set(false, forKey: AppStorageKeys.showFontPanel)
         UserDefaults.standard.set(false, forKey: AppStorageKeys.showTitleEditor)
+        UserDefaults.standard.set(false, forKey: AppStorageKeys.showBgColorPanel)
     }
 
     var body: some Scene {
@@ -45,6 +47,11 @@ struct SmartDashboardApp: App {
                         }
                     }
                 }
+
+                Button("Background Color...") {
+                    showBgColorPanel = true
+                }
+                .keyboardShortcut("b", modifiers: [.command, .shift])
 
                 Divider()
 

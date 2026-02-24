@@ -16,7 +16,14 @@ enum AppStorageKeys {
     // Currency
     static let currencyCode = "currencyCode"
 
+    // Background color
+    static let bgColorHex = "bgColorHex"
+    static let applyBgToMain = "applyBgToMain"
+    static let applyBgToTable = "applyBgToTable"
+    static let applyBgToHeader = "applyBgToHeader"
+
     // Sheet triggers
     static let showFontPanel = "showFontPanel"
     static let showTitleEditor = "showTitleEditor"
+    static let showBgColorPanel = "showBgColorPanel"
 }
