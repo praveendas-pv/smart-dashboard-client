@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TasksTable: View {
     let tasks: [TaskItem]
+    var onEdit: ((TaskItem) -> Void)?
     var onDelete: ((Int) -> Void)?
 
     @State private var taskToDelete: TaskItem?
@@ -30,15 +31,25 @@ struct TasksTable: View {
                 .width(100)
 
                 TableColumn("Actions") { task in
-                    Button(role: .destructive) {
-                        taskToDelete = task
-                    } label: {
-                        Image(systemName: "trash")
-                            .foregroundStyle(.red)
+                    HStack(spacing: 8) {
+                        Button {
+                            onEdit?(task)
+                        } label: {
+                            Image(systemName: "pencil")
+                                .foregroundStyle(.blue)
+                        }
+                        .buttonStyle(.borderless)
+
+                        Button(role: .destructive) {
+                            taskToDelete = task
+                        } label: {
+                            Image(systemName: "trash")
+                                .foregroundStyle(.red)
+                        }
+                        .buttonStyle(.borderless)
                     }
-                    .buttonStyle(.borderless)
                 }
-                .width(60)
+                .width(80)
             }
             .alert("Delete Task", isPresented: Binding(
                 get: { taskToDelete != nil },

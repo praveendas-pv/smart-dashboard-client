@@ -9,6 +9,14 @@ struct ContentView: View {
     @State private var selectedTab = 0
     @State private var deleteError: String?
     @State private var showDeleteError = false
+    @State private var itemToEdit: Item?
+    @State private var taskToEdit: TaskItem?
+    @State private var editItemName = ""
+    @State private var editItemDescription = ""
+    @State private var editItemPrice = ""
+    @State private var editTaskTitle = ""
+    @State private var editTaskDescription = ""
+    @State private var editTaskCompleted = false
 
     private let baseURL = "http://localhost:8000"
 
@@ -38,7 +46,12 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 TabView(selection: $selectedTab) {
-                    ItemsTable(items: items, onDelete: { id in
+                    ItemsTable(items: items, onEdit: { item in
+                        editItemName = item.name
+                        editItemDescription = item.description
+                        editItemPrice = String(item.price)
+                        itemToEdit = item
+                    }, onDelete: { id in
                         Task { await deleteItem(id: id) }
                     })
                         .tabItem {
@@ -46,7 +59,12 @@ struct ContentView: View {
                         }
                         .tag(0)
 
-                    TasksTable(tasks: tasks, onDelete: { id in
+                    TasksTable(tasks: tasks, onEdit: { task in
+                        editTaskTitle = task.title
+                        editTaskDescription = task.description ?? ""
+                        editTaskCompleted = task.completed
+                        taskToEdit = task
+                    }, onDelete: { id in
                         Task { await deleteTask(id: id) }
                     })
                         .tabItem {
@@ -63,6 +81,70 @@ struct ContentView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(deleteError ?? "Unknown error")
+        }
+        .sheet(item: $itemToEdit) { item in
+            VStack(spacing: 16) {
+                Text("Edit Item")
+                    .font(.title2.bold())
+                Form {
+                    TextField("Name", text: $editItemName)
+                    TextField("Description", text: $editItemDescription)
+                    TextField("Price", text: $editItemPrice)
+                }
+                HStack {
+                    Button("Cancel") {
+                        itemToEdit = nil
+                    }
+                    .keyboardShortcut(.cancelAction)
+                    Spacer()
+                    Button("Save") {
+                        Task {
+                            await updateItem(
+                                id: item.id,
+                                name: editItemName,
+                                description: editItemDescription,
+                                price: Double(editItemPrice) ?? item.price
+                            )
+                            itemToEdit = nil
+                        }
+                    }
+                    .keyboardShortcut(.defaultAction)
+                }
+            }
+            .padding()
+            .frame(width: 400)
+        }
+        .sheet(item: $taskToEdit) { task in
+            VStack(spacing: 16) {
+                Text("Edit Task")
+                    .font(.title2.bold())
+                Form {
+                    TextField("Title", text: $editTaskTitle)
+                    TextField("Description", text: $editTaskDescription)
+                    Toggle("Completed", isOn: $editTaskCompleted)
+                }
+                HStack {
+                    Button("Cancel") {
+                        taskToEdit = nil
+                    }
+                    .keyboardShortcut(.cancelAction)
+                    Spacer()
+                    Button("Save") {
+                        Task {
+                            await updateTask(
+                                id: task.id,
+                                title: editTaskTitle,
+                                description: editTaskDescription,
+                                completed: editTaskCompleted
+                            )
+                            taskToEdit = nil
+                        }
+                    }
+                    .keyboardShortcut(.defaultAction)
+                }
+            }
+            .padding()
+            .frame(width: 400)
         }
     }
 
@@ -179,6 +261,62 @@ struct ContentView: View {
             tasks.removeAll { $0.id == id }
         } catch {
             deleteError = "Failed to delete task: \(error.localizedDescription)"
+            showDeleteError = true
+        }
+    }
+
+    private func updateItem(id: Int, name: String, description: String, price: Double) async {
+        do {
+            let url = URL(string: "\(baseURL)/items/\(id)")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "PATCH"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            let body: [String: Any] = ["name": name, "description": description, "price": price]
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                throw URLError(.badServerResponse)
+            }
+
+            let updated = try JSONDecoder().decode(Item.self, from: data)
+            if let index = items.firstIndex(where: { $0.id == id }) {
+                items[index] = updated
+            }
+        } catch {
+            deleteError = "Failed to update item: \(error.localizedDescription)"
+            showDeleteError = true
+        }
+    }
+
+    private func updateTask(id: Int, title: String, description: String, completed: Bool) async {
+        do {
+            let url = URL(string: "\(baseURL)/tasks/\(id)")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "PATCH"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            let body: [String: Any] = ["title": title, "description": description, "completed": completed]
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                throw URLError(.badServerResponse)
+            }
+
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            decoder.dateDecodingStrategy = .iso8601
+
+            let updated = try decoder.decode(TaskItem.self, from: data)
+            if let index = tasks.firstIndex(where: { $0.id == id }) {
+                tasks[index] = updated
+            }
+        } catch {
+            deleteError = "Failed to update task: \(error.localizedDescription)"
             showDeleteError = true
         }
     }
