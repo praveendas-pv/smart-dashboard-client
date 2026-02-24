@@ -1,88 +1,64 @@
 import SwiftUI
 
 struct BackgroundColorView: View {
-    @AppStorage(AppStorageKeys.bgColorHex) private var savedBgColorHex = "#FFFFFF"
-    @AppStorage(AppStorageKeys.applyBgToMain) private var savedApplyToMain = true
-    @AppStorage(AppStorageKeys.applyBgToTable) private var savedApplyToTable = true
-    @AppStorage(AppStorageKeys.applyBgToHeader) private var savedApplyToHeader = false
+    @AppStorage(AppStorageKeys.mainBgColorHex) private var savedMainBg = "#FFFFFF"
+    @AppStorage(AppStorageKeys.tableBgColorHex) private var savedTableBg = "#F5F5F5"
+    @AppStorage(AppStorageKeys.headerBgColorHex) private var savedHeaderBg = "#E0E0E0"
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var selectedHex = "#FFFFFF"
-    @State private var applyToMain = true
-    @State private var applyToTable = true
-    @State private var applyToHeader = false
+    @State private var mainBg = "#FFFFFF"
+    @State private var tableBg = "#F5F5F5"
+    @State private var headerBg = "#E0E0E0"
 
-    private let presets: [(name: String, hex: String)] = [
-        ("White", "#FFFFFF"),
-        ("Light Gray", "#F5F5F5"),
-        ("Dark", "#1E1E1E"),
-        ("Light Blue", "#E3F2FD"),
-        ("Light Green", "#E8F5E9"),
-        ("Cream", "#FFF8E1"),
-        ("Light Purple", "#F3E5F5"),
+    private let themes: [(name: String, icon: String, main: String, table: String, header: String)] = [
+        ("Light", "sun.max.fill", "#FFFFFF", "#F5F5F5", "#E0E0E0"),
+        ("Dark", "moon.fill", "#1E1E1E", "#2D2D2D", "#3D3D3D"),
+        ("Ocean", "water.waves", "#E3F2FD", "#BBDEFB", "#1976D2"),
+        ("Forest", "leaf.fill", "#E8F5E9", "#C8E6C9", "#388E3C"),
     ]
 
-    private var customColor: Binding<Color> {
-        Binding(
-            get: { Color(hex: selectedHex) },
-            set: { selectedHex = $0.hexString }
-        )
-    }
-
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Background Color")
+        VStack(spacing: 16) {
+            Text("Background Colors")
                 .font(.title2.bold())
 
-            // Preview
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color(hex: selectedHex))
-                .frame(height: 50)
-                .overlay(
-                    Text("Preview")
-                        .foregroundStyle(Color(hex: selectedHex).isLight ? .black : .white)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                )
+            // Individual color pickers
+            VStack(spacing: 12) {
+                colorRow(label: "Main Background", hex: $mainBg)
+                colorRow(label: "Table Background", hex: $tableBg)
+                colorRow(label: "Header Background", hex: $headerBg)
+            }
 
             Divider()
 
-            // Presets
+            // Quick Themes
             VStack(alignment: .leading, spacing: 8) {
-                Text("Presets:")
+                Text("Quick Themes:")
                     .font(.headline)
 
-                LazyVGrid(columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible()),
-                    GridItem(.flexible()),
-                    GridItem(.flexible()),
-                ], spacing: 10) {
-                    ForEach(presets, id: \.hex) { preset in
+                HStack(spacing: 10) {
+                    ForEach(themes, id: \.name) { theme in
                         Button {
-                            selectedHex = preset.hex
+                            mainBg = theme.main
+                            tableBg = theme.table
+                            headerBg = theme.header
                         } label: {
                             VStack(spacing: 4) {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color(hex: preset.hex))
-                                    .frame(height: 36)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 6)
-                                            .stroke(selectedHex == preset.hex ? Color.accentColor : Color.gray.opacity(0.3), lineWidth: selectedHex == preset.hex ? 2 : 1)
-                                    )
-                                    .overlay(
-                                        Group {
-                                            if selectedHex == preset.hex {
-                                                Image(systemName: "checkmark")
-                                                    .font(.caption.bold())
-                                                    .foregroundStyle(Color(hex: preset.hex).isLight ? .black : .white)
-                                            }
-                                        }
-                                    )
-                                Text(preset.name)
+                                ZStack {
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .fill(Color(hex: theme.main))
+                                        .frame(height: 32)
+                                    HStack(spacing: 2) {
+                                        Circle().fill(Color(hex: theme.table)).frame(width: 10, height: 10)
+                                        Circle().fill(Color(hex: theme.header)).frame(width: 10, height: 10)
+                                    }
+                                }
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .stroke(isThemeSelected(theme) ? Color.accentColor : Color.gray.opacity(0.3), lineWidth: isThemeSelected(theme) ? 2 : 1)
+                                )
+                                Label(theme.name, systemImage: theme.icon)
                                     .font(.caption2)
                                     .foregroundStyle(.primary)
                             }
@@ -92,53 +68,100 @@ struct BackgroundColorView: View {
                 }
             }
 
-            // Custom color
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Custom:")
-                    .font(.headline)
-                ColorPicker("Pick Custom Color", selection: customColor, supportsOpacity: false)
-            }
-
             Divider()
 
-            // Apply to toggles
+            // Preview
             VStack(alignment: .leading, spacing: 8) {
-                Text("Apply to:")
+                Text("Preview:")
                     .font(.headline)
-                Toggle("Main background", isOn: $applyToMain)
-                Toggle("Table background", isOn: $applyToTable)
-                Toggle("Header only", isOn: $applyToHeader)
+                HStack(spacing: 4) {
+                    previewSwatch("Main", hex: mainBg)
+                    previewSwatch("Table", hex: tableBg)
+                    previewSwatch("Header", hex: headerBg)
+                }
             }
 
             Divider()
 
             // Actions
             HStack {
+                Button("Reset") {
+                    mainBg = "#FFFFFF"
+                    tableBg = "#F5F5F5"
+                    headerBg = "#E0E0E0"
+                }
+
+                Spacer()
+
                 Button("Cancel") {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
 
-                Spacer()
-
-                Button("Apply") {
-                    savedBgColorHex = selectedHex
-                    savedApplyToMain = applyToMain
-                    savedApplyToTable = applyToTable
-                    savedApplyToHeader = applyToHeader
+                Button("Apply All") {
+                    savedMainBg = mainBg
+                    savedTableBg = tableBg
+                    savedHeaderBg = headerBg
                     dismiss()
                 }
                 .keyboardShortcut(.defaultAction)
             }
         }
         .padding()
-        .frame(width: 400)
+        .frame(width: 420)
         .fixedSize()
         .onAppear {
-            selectedHex = savedBgColorHex
-            applyToMain = savedApplyToMain
-            applyToTable = savedApplyToTable
-            applyToHeader = savedApplyToHeader
+            mainBg = savedMainBg
+            tableBg = savedTableBg
+            headerBg = savedHeaderBg
         }
+    }
+
+    private func colorRow(label: String, hex: Binding<String>) -> some View {
+        HStack {
+            Text(label)
+                .frame(width: 140, alignment: .leading)
+
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color(hex: hex.wrappedValue))
+                .frame(width: 30, height: 24)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
+
+            Text(hex.wrappedValue)
+                .font(.caption.monospaced())
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            ColorPicker("", selection: Binding(
+                get: { Color(hex: hex.wrappedValue) },
+                set: { hex.wrappedValue = $0.hexString }
+            ), supportsOpacity: false)
+            .labelsHidden()
+        }
+    }
+
+    private func previewSwatch(_ label: String, hex: String) -> some View {
+        VStack(spacing: 2) {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(Color(hex: hex))
+                .frame(height: 28)
+                .overlay(
+                    Text(label)
+                        .font(.caption2)
+                        .foregroundStyle(Color(hex: hex).isLight ? .black : .white)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                )
+        }
+    }
+
+    private func isThemeSelected(_ theme: (name: String, icon: String, main: String, table: String, header: String)) -> Bool {
+        mainBg == theme.main && tableBg == theme.table && headerBg == theme.header
     }
 }

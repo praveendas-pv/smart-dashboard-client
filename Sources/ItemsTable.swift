@@ -13,21 +13,20 @@ struct ItemsTable: View {
     @AppStorage(AppStorageKeys.fontSize) private var fontSize = 28.0
     @AppStorage(AppStorageKeys.isBold) private var isBold = true
     @AppStorage(AppStorageKeys.isItalic) private var isItalic = false
-    @AppStorage(AppStorageKeys.bgColorHex) private var bgColorHex = "#FFFFFF"
-    @AppStorage(AppStorageKeys.applyBgToTable) private var applyBgToTable = true
+    @AppStorage(AppStorageKeys.tableBgColorHex) private var tableBgColorHex = "#F5F5F5"
 
     private let headerColor = Color(nsColor: NSColor.controlAccentColor)
 
     private var tableBgColor: Color {
-        applyBgToTable ? Color(hex: bgColorHex) : Color(nsColor: .controlBackgroundColor)
+        Color(hex: tableBgColorHex)
     }
 
     private var smartTextColor: Color {
-        applyBgToTable && !Color(hex: bgColorHex).isLight ? .white : .primary
+        !Color(hex: tableBgColorHex).isLight ? .white : .primary
     }
 
     private var smartSecondaryTextColor: Color {
-        applyBgToTable && !Color(hex: bgColorHex).isLight ? .white.opacity(0.7) : .secondary
+        !Color(hex: tableBgColorHex).isLight ? .white.opacity(0.7) : .secondary
     }
 
     private var contentFont: Font {

@@ -31,10 +31,8 @@ struct ContentView: View {
     @AppStorage(AppStorageKeys.textColorHex) private var textColorHex = "#000000"
     @AppStorage(AppStorageKeys.textAlignment) private var textAlignment = TextAlignmentOption.leading.rawValue
     @AppStorage(AppStorageKeys.currencyCode) private var currencyCode = "USD"
-    @AppStorage(AppStorageKeys.bgColorHex) private var bgColorHex = "#FFFFFF"
-    @AppStorage(AppStorageKeys.applyBgToMain) private var applyBgToMain = true
-    @AppStorage(AppStorageKeys.applyBgToTable) private var applyBgToTable = true
-    @AppStorage(AppStorageKeys.applyBgToHeader) private var applyBgToHeader = false
+    @AppStorage(AppStorageKeys.mainBgColorHex) private var mainBgColorHex = "#FFFFFF"
+    @AppStorage(AppStorageKeys.headerBgColorHex) private var headerBgColorHex = "#E0E0E0"
     @AppStorage(AppStorageKeys.showFontPanel) private var showFontPanel = false
     @AppStorage(AppStorageKeys.showTitleEditor) private var showTitleEditor = false
     @AppStorage(AppStorageKeys.showBgColorPanel) private var showBgColorPanel = false
@@ -60,10 +58,10 @@ struct ContentView: View {
                     .fill(apiStatus == "healthy" ? .green : .red)
                     .frame(width: 12, height: 12)
                 Text(apiStatus)
-                    .foregroundStyle(applyBgToHeader && !Color(hex: bgColorHex).isLight ? .white.opacity(0.7) : .secondary)
+                    .foregroundStyle(!Color(hex: headerBgColorHex).isLight ? .white.opacity(0.7) : .secondary)
             }
             .padding()
-            .background(applyBgToHeader ? Color(hex: bgColorHex) : Color(nsColor: .windowBackgroundColor))
+            .background(Color(hex: headerBgColorHex))
 
             Divider()
 
@@ -124,7 +122,7 @@ struct ContentView: View {
                 }
             }
         }
-        .background(applyBgToMain ? Color(hex: bgColorHex) : Color.clear)
+        .background(Color(hex: mainBgColorHex))
         .task {
             await loadData()
         }
