@@ -64,6 +64,9 @@ struct ContentView: View {
                             .disabled(newItemName.isEmpty)
                         }
                         .padding()
+                        .fixedSize(horizontal: false, vertical: true)
+
+                        Divider()
 
                         ItemsTable(items: items, onEdit: { item in
                             editItemName = item.name
