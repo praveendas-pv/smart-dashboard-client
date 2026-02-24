@@ -22,7 +22,7 @@ struct ItemsTable: View {
                 Text(item.name)
                     .fontWeight(selection == item.id ? .bold : .regular)
             }
-            .width(min: 100, ideal: 150)
+            .width(min: 100, ideal: 150, max: .infinity)
 
             TableColumn("Description") { item in
                 Text(item.description)
@@ -34,7 +34,7 @@ struct ItemsTable: View {
                     .monospacedDigit()
                     .fontWeight(selection == item.id ? .bold : .regular)
             }
-            .width(80)
+            .width(100)
 
             TableColumn("Actions") { item in
                 HStack(spacing: 8) {
@@ -55,8 +55,9 @@ struct ItemsTable: View {
                     .buttonStyle(.borderless)
                 }
             }
-            .width(80)
+            .width(50)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .alert("Delete Item", isPresented: Binding(
             get: { itemToDelete != nil },
             set: { if !$0 { itemToDelete = nil } }

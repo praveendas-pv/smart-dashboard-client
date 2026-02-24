@@ -17,7 +17,7 @@ struct TasksTable: View {
                     Text(task.title)
                         .fontWeight(selection == task.id ? .bold : .regular)
                 }
-                .width(min: 100, ideal: 150)
+                .width(min: 100, ideal: 150, max: .infinity)
 
                 TableColumn("Description") { task in
                     Text(task.description ?? "-")
@@ -55,8 +55,9 @@ struct TasksTable: View {
                         .buttonStyle(.borderless)
                     }
                 }
-                .width(80)
+                .width(50)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .alert("Delete Task", isPresented: Binding(
                 get: { taskToDelete != nil },
                 set: { if !$0 { taskToDelete = nil } }

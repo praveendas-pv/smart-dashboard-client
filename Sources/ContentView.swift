@@ -85,6 +85,7 @@ struct ContentView: View {
                             .disabled(newItemName.isEmpty)
                         }
                         .padding()
+                        .frame(maxWidth: .infinity)
                         .fixedSize(horizontal: false, vertical: true)
 
                         Divider()
