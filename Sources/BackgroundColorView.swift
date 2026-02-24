@@ -110,7 +110,7 @@ struct BackgroundColorView: View {
                 Toggle("Header only", isOn: $applyToHeader)
             }
 
-            Spacer()
+            Divider()
 
             // Actions
             HStack {
@@ -132,7 +132,8 @@ struct BackgroundColorView: View {
             }
         }
         .padding()
-        .frame(width: 400, height: 520)
+        .frame(width: 400)
+        .fixedSize()
         .onAppear {
             selectedHex = savedBgColorHex
             applyToMain = savedApplyToMain
