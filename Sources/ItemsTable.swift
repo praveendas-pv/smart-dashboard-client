@@ -2,6 +2,9 @@ import SwiftUI
 
 struct ItemsTable: View {
     let items: [Item]
+    var onDelete: ((Int) -> Void)?
+
+    @State private var itemToDelete: Item?
 
     var body: some View {
         Table(items) {
@@ -21,6 +24,35 @@ struct ItemsTable: View {
                     .monospacedDigit()
             }
             .width(80)
+
+            TableColumn("Actions") { item in
+                Button(role: .destructive) {
+                    itemToDelete = item
+                } label: {
+                    Image(systemName: "trash")
+                        .foregroundStyle(.red)
+                }
+                .buttonStyle(.borderless)
+            }
+            .width(60)
+        }
+        .alert("Delete Item", isPresented: Binding(
+            get: { itemToDelete != nil },
+            set: { if !$0 { itemToDelete = nil } }
+        )) {
+            Button("Cancel", role: .cancel) {
+                itemToDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                if let item = itemToDelete {
+                    onDelete?(item.id)
+                    itemToDelete = nil
+                }
+            }
+        } message: {
+            if let item = itemToDelete {
+                Text("Are you sure you want to delete \"\(item.name)\"?")
+            }
         }
     }
 }

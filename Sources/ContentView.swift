@@ -7,6 +7,8 @@ struct ContentView: View {
     @State private var apiStatus = "Checking..."
     @State private var errorMessage: String?
     @State private var selectedTab = 0
+    @State private var deleteError: String?
+    @State private var showDeleteError = false
 
     private let baseURL = "http://localhost:8000"
 
@@ -36,13 +38,17 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 TabView(selection: $selectedTab) {
-                    ItemsTable(items: items)
+                    ItemsTable(items: items, onDelete: { id in
+                        Task { await deleteItem(id: id) }
+                    })
                         .tabItem {
                             Label("Items", systemImage: "shippingbox")
                         }
                         .tag(0)
 
-                    TasksTable(tasks: tasks)
+                    TasksTable(tasks: tasks, onDelete: { id in
+                        Task { await deleteTask(id: id) }
+                    })
                         .tabItem {
                             Label("Tasks", systemImage: "checklist")
                         }
@@ -52,6 +58,11 @@ struct ContentView: View {
         }
         .task {
             await loadData()
+        }
+        .alert("Delete Failed", isPresented: $showDeleteError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(deleteError ?? "Unknown error")
         }
     }
 
@@ -131,6 +142,44 @@ struct ContentView: View {
         } catch {
             // Tasks loading failure is not critical
             print("Failed to load tasks: \(error)")
+        }
+    }
+
+    private func deleteItem(id: Int) async {
+        do {
+            let url = URL(string: "\(baseURL)/items/\(id)")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "DELETE"
+
+            let (_, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 204 else {
+                throw URLError(.badServerResponse)
+            }
+
+            items.removeAll { $0.id == id }
+        } catch {
+            deleteError = "Failed to delete item: \(error.localizedDescription)"
+            showDeleteError = true
+        }
+    }
+
+    private func deleteTask(id: Int) async {
+        do {
+            let url = URL(string: "\(baseURL)/tasks/\(id)")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "DELETE"
+
+            let (_, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 204 else {
+                throw URLError(.badServerResponse)
+            }
+
+            tasks.removeAll { $0.id == id }
+        } catch {
+            deleteError = "Failed to delete task: \(error.localizedDescription)"
+            showDeleteError = true
         }
     }
 }
