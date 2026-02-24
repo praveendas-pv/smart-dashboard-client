@@ -6,23 +6,32 @@ struct ItemsTable: View {
     var onDelete: ((Int) -> Void)?
 
     @State private var itemToDelete: Item?
+    @State private var selection: Item.ID?
 
     var body: some View {
-        Table(items) {
+        Table(items, selection: $selection) {
             TableColumn("ID") { item in
                 Text("\(item.id)")
                     .monospacedDigit()
+                    .fontWeight(selection == item.id ? .bold : .regular)
             }
             .width(50)
 
-            TableColumn("Name", value: \.name)
-                .width(min: 100, ideal: 150)
+            TableColumn("Name") { item in
+                Text(item.name)
+                    .fontWeight(selection == item.id ? .bold : .regular)
+            }
+            .width(min: 100, ideal: 150)
 
-            TableColumn("Description", value: \.description)
+            TableColumn("Description") { item in
+                Text(item.description)
+                    .fontWeight(selection == item.id ? .bold : .regular)
+            }
 
             TableColumn("Price") { item in
                 Text(item.price, format: .currency(code: "USD"))
                     .monospacedDigit()
+                    .fontWeight(selection == item.id ? .bold : .regular)
             }
             .width(80)
 

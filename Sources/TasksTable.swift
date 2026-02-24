@@ -6,18 +6,23 @@ struct TasksTable: View {
     var onDelete: ((Int) -> Void)?
 
     @State private var taskToDelete: TaskItem?
+    @State private var selection: TaskItem.ID?
 
     var body: some View {
         if tasks.isEmpty {
             emptyStateView
         } else {
-            Table(tasks) {
-                TableColumn("Title", value: \.title)
-                    .width(min: 100, ideal: 150)
+            Table(tasks, selection: $selection) {
+                TableColumn("Title") { task in
+                    Text(task.title)
+                        .fontWeight(selection == task.id ? .bold : .regular)
+                }
+                .width(min: 100, ideal: 150)
 
                 TableColumn("Description") { task in
                     Text(task.description ?? "-")
                         .foregroundStyle(task.description == nil ? .tertiary : .primary)
+                        .fontWeight(selection == task.id ? .bold : .regular)
                 }
 
                 TableColumn("Status") { task in
@@ -26,6 +31,7 @@ struct TasksTable: View {
                             .fill(task.completed ? .green : .orange)
                             .frame(width: 8, height: 8)
                         Text(task.statusText)
+                            .fontWeight(selection == task.id ? .bold : .regular)
                     }
                 }
                 .width(100)
