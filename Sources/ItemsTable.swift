@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ItemsTable: View {
     let items: [Item]
+    var currencyCode: String = "USD"
     var onEdit: ((Item) -> Void)?
     var onDelete: ((Int) -> Void)?
 
@@ -29,7 +30,7 @@ struct ItemsTable: View {
             }
 
             TableColumn("Price") { item in
-                Text(item.price, format: .currency(code: "USD"))
+                Text(item.price, format: .currency(code: currencyCode))
                     .monospacedDigit()
                     .fontWeight(selection == item.id ? .bold : .regular)
             }

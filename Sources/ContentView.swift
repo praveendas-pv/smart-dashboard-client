@@ -21,14 +21,35 @@ struct ContentView: View {
     @State private var newItemDescription = ""
     @State private var newItemPrice = ""
 
+    // Preferences
+    @AppStorage(AppStorageKeys.dashboardTitle) private var dashboardTitle = "smart-dashboard"
+    @AppStorage(AppStorageKeys.fontFamily) private var fontFamily = FontFamily.system.rawValue
+    @AppStorage(AppStorageKeys.fontSize) private var fontSize = 28.0
+    @AppStorage(AppStorageKeys.isBold) private var isBold = true
+    @AppStorage(AppStorageKeys.isItalic) private var isItalic = false
+    @AppStorage(AppStorageKeys.isUnderline) private var isUnderline = false
+    @AppStorage(AppStorageKeys.textColorHex) private var textColorHex = "#000000"
+    @AppStorage(AppStorageKeys.textAlignment) private var textAlignment = TextAlignmentOption.leading.rawValue
+    @AppStorage(AppStorageKeys.currencyCode) private var currencyCode = "USD"
+    @AppStorage(AppStorageKeys.showFontPanel) private var showFontPanel = false
+    @AppStorage(AppStorageKeys.showTitleEditor) private var showTitleEditor = false
+
     private let baseURL = "http://localhost:8000"
 
     var body: some View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("smart-dashboard")
-                    .font(.title.bold())
+                let family = FontFamily(rawValue: fontFamily) ?? .system
+                let alignOpt = TextAlignmentOption(rawValue: textAlignment) ?? .leading
+
+                Text(dashboardTitle)
+                    .font(resolvedFont(family: family, size: fontSize, bold: isBold, italic: isItalic))
+                    .underline(isUnderline)
+                    .foregroundStyle(Color(hex: textColorHex))
+                    .multilineTextAlignment(alignOpt.alignment)
+                    .frame(maxWidth: .infinity, alignment: alignOpt.frameAlignment)
+
                 Spacer()
                 Circle()
                     .fill(apiStatus == "healthy" ? .green : .red)
@@ -68,7 +89,7 @@ struct ContentView: View {
 
                         Divider()
 
-                        ItemsTable(items: items, onEdit: { item in
+                        ItemsTable(items: items, currencyCode: currencyCode, onEdit: { item in
                             editItemName = item.name
                             editItemDescription = item.description
                             editItemPrice = String(item.price)
@@ -168,6 +189,12 @@ struct ContentView: View {
             }
             .padding()
             .frame(width: 400)
+        }
+        .sheet(isPresented: $showFontPanel) {
+            FontSettingsView()
+        }
+        .sheet(isPresented: $showTitleEditor) {
+            TitleEditorView()
         }
     }
 
