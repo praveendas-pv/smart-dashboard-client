@@ -17,6 +17,9 @@ struct ContentView: View {
     @State private var editTaskTitle = ""
     @State private var editTaskDescription = ""
     @State private var editTaskCompleted = false
+    @State private var newItemName = ""
+    @State private var newItemDescription = ""
+    @State private var newItemPrice = ""
 
     private let baseURL = "http://localhost:8000"
 
@@ -46,14 +49,31 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 TabView(selection: $selectedTab) {
-                    ItemsTable(items: items, onEdit: { item in
-                        editItemName = item.name
-                        editItemDescription = item.description
-                        editItemPrice = String(item.price)
-                        itemToEdit = item
-                    }, onDelete: { id in
-                        Task { await deleteItem(id: id) }
-                    })
+                    VStack(spacing: 0) {
+                        HStack {
+                            TextField("Name", text: $newItemName)
+                                .textFieldStyle(.roundedBorder)
+                            TextField("Description", text: $newItemDescription)
+                                .textFieldStyle(.roundedBorder)
+                            TextField("Price", text: $newItemPrice)
+                                .textFieldStyle(.roundedBorder)
+                                .frame(width: 80)
+                            Button("Add") {
+                                Task { await createItem() }
+                            }
+                            .disabled(newItemName.isEmpty)
+                        }
+                        .padding()
+
+                        ItemsTable(items: items, onEdit: { item in
+                            editItemName = item.name
+                            editItemDescription = item.description
+                            editItemPrice = String(item.price)
+                            itemToEdit = item
+                        }, onDelete: { id in
+                            Task { await deleteItem(id: id) }
+                        })
+                    }
                         .tabItem {
                             Label("Items", systemImage: "shippingbox")
                         }
@@ -224,6 +244,38 @@ struct ContentView: View {
         } catch {
             // Tasks loading failure is not critical
             print("Failed to load tasks: \(error)")
+        }
+    }
+
+    private func createItem() async {
+        do {
+            let url = URL(string: "\(baseURL)/items")!
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            let body: [String: Any] = [
+                "name": newItemName,
+                "description": newItemDescription,
+                "price": Double(newItemPrice) ?? 0.0
+            ]
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 201 else {
+                throw URLError(.badServerResponse)
+            }
+
+            let created = try JSONDecoder().decode(Item.self, from: data)
+            items.append(created)
+
+            newItemName = ""
+            newItemDescription = ""
+            newItemPrice = ""
+        } catch {
+            deleteError = "Failed to create item: \(error.localizedDescription)"
+            showDeleteError = true
         }
     }
 
